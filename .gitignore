@@ -1,0 +1,6 @@
+data/
+*.bmp
+*.npy
+*.pyc
+*.png
+*.pth
