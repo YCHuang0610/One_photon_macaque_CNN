@@ -115,7 +115,7 @@ class MyTrainer:
                 print(f'Validation loss decreased ({self.best_val_loss:.6f} --> {val_loss:.6f}). Saving model...')
                 if not os.path.exists('model'):
                     os.makedirs('model')
-                torch.save(self.model.state_dict(), f'model/best_model_{epoch}.pth')
+                torch.save(self.model.state_dict(), f'model/best_model.pth')
                 self.best_val_loss = val_loss
 
             train_loss_list.append(train_loss)

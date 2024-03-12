@@ -17,19 +17,20 @@ config = {
     'k': (16, 32, 64, 128),
     'kernel_size': 3,
     'stride': 1,
-    'padding': 0,
+    'padding': 1,
     'bias': True,
-    'fc_hidden_units': 512,
+    'fc_hidden_units': 8192,
     # 训练相关
-    'batch_size': 1024,
-    'num_epoch': 100,
+    'batch_size': 256,
+    'num_epoch': 70,
     ## optimizer
+    'optimizer': 'SGD',
     'learning_rate': 0.001,
-    'weight_decay': 0.0001,
+    'weight_decay': 1e-4,
+    'momentum': 0.9,
     ## scheduler
-    'step_size': 10,
-    'gamma': 0.7,
+    'step_size': 20,
+    'gamma': 0.8,
     # 测试
-    'test': False,
-    'test_epoch': 40
+    'test': True
 }

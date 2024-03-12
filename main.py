@@ -65,9 +65,16 @@ if __name__ == "__main__":
                   fc_hidden_units=config['fc_hidden_units'])
     
     # Set up the optimizer and scheduler
-    optimizer = torch.optim.Adam(model.parameters(), 
-                                 lr=config['learning_rate'],
-                                 weight_decay=config['weight_decay'])
+    if config['optimizer'] == 'Adam':
+        optimizer = torch.optim.Adam(model.parameters(), 
+                                     lr=config['learning_rate'],
+                                     weight_decay=config['weight_decay'])
+    else:
+        optimizer = torch.optim.SGD(model.parameters(),
+                                    lr=config['learning_rate'],
+                                    momentum=config['momentum'],
+                                    weight_decay=config['weight_decay'])
+
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 
                                                 step_size=config['step_size'],
                                                 gamma=config['gamma'])
@@ -90,8 +97,8 @@ if __name__ == "__main__":
     
     # Read the best model
     if config['test'] == True:
-        print("===========================================test====================================")
-        model.load_state_dict(torch.load(f"model/best_model_{config['test_epoch']}.pth"))
+        print("=======================================test====================================")
+        model.load_state_dict(torch.load(f"model/best_model.pth"))
         trainer = MyTrainer(model, optimizer=optimizer, loss_function=torch.nn.MSELoss(), device=device)
         test_loss, test_corr = trainer.valEvaluate_each_epoch(test_loader)
         print(f'Test Loss: {test_loss:.4f}, Test Corr: {test_corr:.4f}')

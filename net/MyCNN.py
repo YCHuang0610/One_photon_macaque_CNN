@@ -92,9 +92,12 @@ class MyCNN(nn.Module):
 
         # 线性层
         self.linearMapping = nn.Sequential(
+            nn.Dropout(0.5),
             nn.Linear(self._to_linear, fc_hidden_units),
             nn.ReLU(inplace=True),
-            nn.Linear(fc_hidden_units, label_length)
+            nn.Dropout(0.5),
+            nn.Linear(fc_hidden_units, label_length),
+            nn.ReLU(inplace=True)
         )
     
     def forward_conv(self, x):
