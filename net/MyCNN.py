@@ -113,3 +113,160 @@ class MyCNN(nn.Module):
         x = x.view(x.size(0), -1)  # 展平特征图
         x = self.linearMapping(x)
         return x
+    
+# 两层CNN
+class MyCNN_two_layers(nn.Module):
+    def __init__(self, label_length, 
+                 x_shape=(3, 224, 224),
+                 k=(16, 32, 64, 128), 
+                 kernel_size=3, stride=1,
+                 padding=0, 
+                 bias=True, 
+                 fc_hidden_units=512):
+        super(MyCNN, self).__init__()
+
+        # 利用nn.Sequential简化卷积层定义
+        self.features = nn.Sequential(
+            nn.Conv2d(3, k[0], kernel_size=kernel_size, stride=stride, padding=padding, bias=bias),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(k[0], k[1], kernel_size=kernel_size, stride=stride, padding=padding, bias=bias),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+        )
+
+        # 动态计算全连接层输入尺寸
+        with torch.no_grad():
+            self._to_linear = None
+            self.forward_conv(torch.randn(1, *x_shape))
+
+        # 线性层
+        self.linearMapping = nn.Sequential(
+            nn.Dropout(0.5),
+            nn.Linear(self._to_linear, fc_hidden_units),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.5),
+            nn.Linear(fc_hidden_units, label_length),
+            nn.ReLU(inplace=True)
+        )
+    
+    def forward_conv(self, x):
+        if self._to_linear is None:
+            x = self.features(x)
+            self._to_linear = x.view(1, -1).size(1)
+        else:
+            x = self.features(x)
+        return x
+    
+    def forward(self, x):
+        x = self.forward_conv(x)
+        x = x.view(x.size(0), -1)  # 展平特征图
+        x = self.linearMapping(x)
+        return x
+    
+
+# 六层    
+class MyCNN_six_layers(nn.Module):
+    def __init__(self, label_length, 
+                 x_shape=(3, 224, 224),
+                 k=(16, 32, 64, 128), 
+                 kernel_size=3, stride=1,
+                 padding=0, 
+                 bias=True, 
+                 fc_hidden_units=512):
+        super(MyCNN, self).__init__()
+
+        # 利用nn.Sequential简化卷积层定义
+        self.features = nn.Sequential(
+            nn.Conv2d(3, k[0], kernel_size=kernel_size, stride=stride, padding=padding, bias=bias),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(k[0], k[1], kernel_size=kernel_size, stride=stride, padding=padding, bias=bias),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(k[1], k[2], kernel_size=kernel_size, stride=stride, padding=padding, bias=bias),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(k[2], k[3], kernel_size=kernel_size, stride=stride, padding=padding, bias=bias),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(k[2], k[3], kernel_size=kernel_size, stride=stride, padding=padding, bias=bias),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(k[2], k[3], kernel_size=kernel_size, stride=stride, padding=padding, bias=bias),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2)
+        )
+
+        # 动态计算全连接层输入尺寸
+        with torch.no_grad():
+            self._to_linear = None
+            self.forward_conv(torch.randn(1, *x_shape))
+
+        # 线性层
+        self.linearMapping = nn.Sequential(
+            nn.Dropout(0.5),
+            nn.Linear(self._to_linear, fc_hidden_units),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.5),
+            nn.Linear(fc_hidden_units, label_length),
+            nn.ReLU(inplace=True)
+        )
+    
+    def forward_conv(self, x):
+        if self._to_linear is None:
+            x = self.features(x)
+            self._to_linear = x.view(1, -1).size(1)
+        else:
+            x = self.features(x)
+        return x
+    
+    def forward(self, x):
+        x = self.forward_conv(x)
+        x = x.view(x.size(0), -1)  # 展平特征图
+        x = self.linearMapping(x)
+        return x
+
+
+# 写一个解码器
+class DecoderCNN(nn.Module):
+    def __init__(self, label_length,
+                 k=(16, 32, 64, 128), 
+                 kernel_size=3, stride=1,
+                 padding=0, bias=True,
+                 fc_hidden_units=512,
+                 output_shape=(3, 224, 224)):
+        super(DecoderCNN, self).__init__()
+
+        # 线性层
+        self.linearMapping = nn.Sequential(
+            nn.Dropout(0.5),
+            nn.Linear(label_length, fc_hidden_units),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.5),
+            nn.Linear(fc_hidden_units, 14*14*128),
+            nn.ReLU(inplace=True)
+        )
+
+        # 反卷积层
+        self.deconv = nn.Sequential(
+            nn.ConvTranspose2d(k[3], k[2], kernel_size=kernel_size, stride=stride, padding=padding, bias=bias),
+            nn.ReLU(inplace=True),
+            nn.Upsample(scale_factor=2, mode='nearest'),
+            nn.ConvTranspose2d(k[2], k[1], kernel_size=kernel_size, stride=stride, padding=padding, bias=bias),
+            nn.ReLU(inplace=True),
+            nn.Upsample(scale_factor=2, mode='nearest'),
+            nn.ConvTranspose2d(k[1], k[0], kernel_size=kernel_size, stride=stride, padding=padding, bias=bias),
+            nn.ReLU(inplace=True),
+            nn.Upsample(scale_factor=2, mode='nearest'),
+            nn.ConvTranspose2d(k[0], 3, kernel_size=kernel_size, stride=stride, padding=padding, bias=bias),
+            nn.ReLU(inplace=True),
+            nn.Upsample(scale_factor=2, mode='nearest')
+        )
+
+        
+    def forward(self, x):
+        x = self.linearMapping(x)
+        x = x.view(x.size(0), 128, 14, 14)
+        x = self.deconv(x)
+        return x
