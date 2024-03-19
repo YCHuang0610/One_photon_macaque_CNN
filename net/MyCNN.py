@@ -96,8 +96,7 @@ class MyCNN(nn.Module):
             nn.Linear(self._to_linear, fc_hidden_units),
             nn.ReLU(inplace=True),
             nn.Dropout(0.5),
-            nn.Linear(fc_hidden_units, label_length),
-            nn.ReLU(inplace=True)
+            nn.Linear(fc_hidden_units, label_length)
         )
     
     def forward_conv(self, x):
@@ -146,8 +145,7 @@ class MyCNN_two_layers(nn.Module):
             nn.Linear(self._to_linear, fc_hidden_units),
             nn.ReLU(inplace=True),
             nn.Dropout(0.5),
-            nn.Linear(fc_hidden_units, label_length),
-            nn.ReLU(inplace=True)
+            nn.Linear(fc_hidden_units, label_length)
         )
     
     def forward_conv(self, x):
@@ -209,8 +207,7 @@ class MyCNN_six_layers(nn.Module):
             nn.Linear(self._to_linear, fc_hidden_units),
             nn.ReLU(inplace=True),
             nn.Dropout(0.5),
-            nn.Linear(fc_hidden_units, label_length),
-            nn.ReLU(inplace=True)
+            nn.Linear(fc_hidden_units, label_length)
         )
     
     def forward_conv(self, x):
