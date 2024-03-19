@@ -97,7 +97,7 @@ class MyTrainer:
         val_corr = val_corr / len(val_loader.dataset)
         return val_loss, val_corr
 
-    def train(self, train_loader, val_loader, num_epoch=100):
+    def train(self, train_loader, val_loader, num_epoch=100, save_model_name='best_model.pth'):
         train_loss_list = []
         train_corr_list = []
         val_loss_list = []
@@ -115,7 +115,7 @@ class MyTrainer:
                 print(f'Validation loss decreased ({self.best_val_loss:.6f} --> {val_loss:.6f}). Saving model...')
                 if not os.path.exists('model'):
                     os.makedirs('model')
-                torch.save(self.model.state_dict(), f'model/best_model.pth')
+                torch.save(self.model.state_dict(), os.path.join('model', save_model_name))
                 self.best_val_loss = val_loss
 
             train_loss_list.append(train_loss)

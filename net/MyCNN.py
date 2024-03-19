@@ -123,7 +123,7 @@ class MyCNN_two_layers(nn.Module):
                  padding=0, 
                  bias=True, 
                  fc_hidden_units=512):
-        super(MyCNN, self).__init__()
+        super(MyCNN_two_layers, self).__init__()
 
         # 利用nn.Sequential简化卷积层定义
         self.features = nn.Sequential(
@@ -174,7 +174,7 @@ class MyCNN_six_layers(nn.Module):
                  padding=0, 
                  bias=True, 
                  fc_hidden_units=512):
-        super(MyCNN, self).__init__()
+        super(MyCNN_six_layers, self).__init__()
 
         # 利用nn.Sequential简化卷积层定义
         self.features = nn.Sequential(
