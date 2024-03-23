@@ -1,6 +1,7 @@
 from config import config
-from net.MyCNN import MyCNN
+from net.MyCNN import MyCNN_two_layers, MyCNN_four_layers, MyCNN_six_layers
 from utilis.data_loader import My_twoPhoton_Dataset, transform
+from Train_different_layers import Test_MyCNN_model
 
 import os
 import numpy as np
@@ -33,10 +34,11 @@ def PearsonCorr(output, label):
     return corr
 
 class GradCAM:
-    def __init__(self, model, last_conv_layer, before_last_conv_layer):
+    def __init__(self, model, last_conv_layer, before_last_conv_layer, last_channel=128):
         self.model = model
         self.last_conv_layer = last_conv_layer
         self.before_last_conv_layer = before_last_conv_layer
+        self.last_channel = last_channel
 
     def generate_heatmap(self, image, label):
         '''
@@ -83,8 +85,7 @@ class GradCAM:
         intermediate_output = self.before_last_conv_layer(image.detach())
         last_conv_layer_output = self.last_conv_layer(intermediate_output) # [1, 128, 28, 28]
         # 对每个通道的输出乘以对应的梯度 [1, 128, 28, 28]
-        k = config['k']
-        for i in range(k[3]):
+        for i in range(self.last_channel):
             last_conv_layer_output[:, i, :, :] *= pooled_gradients[i]
 
         heatmap = torch.mean(last_conv_layer_output, dim=1).squeeze().cpu().detach().numpy()
@@ -126,89 +127,64 @@ te_label = np.load(config['test_label'])
 test_dataset = My_twoPhoton_Dataset(te_image_path_list, te_label)
 test_loader = DataLoader(test_dataset, batch_size=500, shuffle=False)
 
-model = MyCNN(te_label.shape[1],
-                k=config['k'],
-                kernel_size=config['kernel_size'],
-                stride=config['stride'],
-                padding=config['padding'],
-                bias=config['bias'],
-                fc_hidden_units=config['fc_hidden_units'])
 
-model.load_state_dict(torch.load(f"model/best_model.pth"))
-model.eval()
-model.to(device=device)
-
-# 测试模型
-for images, labels in test_loader:
-    images = images.to(device=device, dtype=torch.float32)
-    labels = labels.to(device=device, dtype=torch.float32)
-    with torch.no_grad():
-        outputs = model(images)
-
-# 转换为numpy
-outputs = outputs.cpu().numpy()
-labels = labels.cpu().numpy()
-
-# 计算outputs和labels每行之间的相关系数
-############# 1. 相关系数分布
-correlation = []
-for i in range(outputs.shape[0]):
-    correlation.append(pearsonr(outputs[i], labels[i])[0])
-
-# 计算平均相关系数
-mean_correlation = np.mean(correlation)
-print(mean_correlation)
-
-plt.hist(correlation, bins=50, edgecolor='black')
-plt.title('Correlation Distribution')
-plt.xlabel('Correlation')
-plt.ylabel('Frequency')
-plt.savefig('plots/test_correlation_distribution.png')
-
-############## 2. 最高和最低的图片
-## 2.1 相关系数最小的图片
-# 找到第几张图片的相关系数最小
-plt.figure(figsize=(10, 10))
-for i in range(9):
-    image = Image.open(te_image_path_list[np.argsort(correlation)[i]]).convert('RGB')
-    plt.subplot(3, 3, i+1)
-    plt.imshow(image)
-    plt.title(f'correlation: {np.sort(correlation)[i]}')
-plt.savefig('plots/worst_correlation_images.png')
-
-## 2.2 相关系数最大的图片
-# 把相关系数最高的前九张图片显示出来，每行显示3张图片
-plt.figure(figsize=(10, 10))
-for i in range(9):
-    image = Image.open(te_image_path_list[np.argsort(correlation)[-i-1]]).convert('RGB')
-    plt.subplot(3, 3, i+1)
-    plt.imshow(image)
-    plt.title(f'correlation: {np.sort(correlation)[-i-1]}')
-plt.savefig('plots/best_correlation_images.png')
-
-############## 3. 利用Grad-CAM可视化模型
-# 选择一个图片，计算其Grad-CAM
-# 选择相关最差的图片
-grad_cam = GradCAM(model, model.features[-3], model.features[:9])
-# # 选择相关最好的图片
-# grad_cam.visualize_gradcam(te_image_path_list[np.argsort(correlation)[-1]], 
-#                            labels[np.argsort(correlation)[-1]],
-#                            save_path='plots/best_correlation_grad_cam.png')
-# grad_cam.visualize_gradcam(te_image_path_list[np.argsort(correlation)[0]], 
-#                            labels[np.argsort(correlation)[0]],
-#                            save_path='plots/worst_correlation_grad_cam.png')
-
-# 循环前九张相关系数最低的图片，计算其Grad-CAM
-for i in range(9):
-    grad_cam.visualize_gradcam(te_image_path_list[np.argsort(correlation)[i]], 
-                               labels[np.argsort(correlation)[i]],
-                               save_path=f'plots/worst_correlation_grad_cam/{i}.png')
+for My_model in [MyCNN_two_layers, MyCNN_four_layers, MyCNN_six_layers]:
+    model = My_model(te_label.shape[1],
+                    k=config['k'],
+                    kernel_size=config['kernel_size'],
+                    stride=config['stride'],
+                    padding=config['padding'],
+                    bias=config['bias'],
+                    fc_hidden_units=config['fc_hidden_units'])
     
-# 循环前九张相关系数最高的图片，计算其Grad-CAM
-for i in range(9):
-    grad_cam.visualize_gradcam(te_image_path_list[np.argsort(correlation)[-i-1]], 
-                               labels[np.argsort(correlation)[-i-1]],
-                               save_path=f'plots/best_correlation_grad_cam/{i}.png')
+    correlation_rows, correlation_cols, _, labels = Test_MyCNN_model(model, 
+                                                          test_loader, 
+                                                          save_model_name=f'best_model_{My_model.__name__}.pth', 
+                                                          device=device)
+
+    # 1. 相关系数分布
+    plt.hist(correlation_rows, bins=50, edgecolor='black')
+    plt.title('Correlation Distribution')
+    plt.xlabel('Correlation')
+    plt.ylabel('Frequency')
+    plt.savefig(os.paths.join('plots', My_model.__name__, 'test_correlation_distribution.png'))
+
+    # 2. 最高和最低的图片
+    ## 2.1 相关系数最小的图片
+    # 找到第几张图片的相关系数最小
+    plt.figure(figsize=(10, 10))
+    for i in range(9):
+        image = Image.open(te_image_path_list[np.argsort(correlation_rows)[i]]).convert('RGB')
+        plt.subplot(3, 3, i+1)
+        plt.imshow(image)
+        plt.title(f'correlation: {np.sort(correlation_rows)[i]}')
+    plt.savefig(os.paths.join('plots', My_model.__name__,'worst_correlation_images.png'))
+
+    ## 2.2 相关系数最大的图片
+    # 把相关系数最高的前九张图片显示出来，每行显示3张图片
+    plt.figure(figsize=(10, 10))
+    for i in range(9):
+        image = Image.open(te_image_path_list[np.argsort(correlation_rows)[-i-1]]).convert('RGB')
+        plt.subplot(3, 3, i+1)
+        plt.imshow(image)
+        plt.title(f'correlation: {np.sort(correlation_rows)[-i-1]}')
+    plt.savefig(os.paths.join('plots', My_model.__name__, 'best_correlation_images.png'))
+
+    # 3. 利用Grad-CAM可视化模型
+    # 选择一个图片，计算其Grad-CAM
+    # 选择相关最差的图片
+    grad_cam = GradCAM(model, model.features[-3], model.features[:9])
+    # 循环前九张相关系数最低的图片，计算其Grad-CAM
+    for i in range(9):
+        grad_cam.visualize_gradcam(te_image_path_list[np.argsort(correlation_rows)[i]], 
+                                labels[np.argsort(correlation_rows)[i]],
+                                save_path=os.paths.join('plots', My_model.__name__, f'worst_correlation_grad_cam_{i}.png'))
+        
+    # 循环前九张相关系数最高的图片，计算其Grad-CAM
+    for i in range(9):
+        grad_cam.visualize_gradcam(te_image_path_list[np.argsort(correlation_rows)[-i-1]], 
+                                labels[np.argsort(correlation_rows)[-i-1]],
+                                save_path=os.paths.join('plots', My_model.__name__, f'best_correlation_grad_cam_{i}.png'))
 
 
 

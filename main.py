@@ -1,5 +1,5 @@
 from config import config
-from net.MyCNN import MyCNN
+from net.MyCNN import MyCNN_four_layers
 from net.MyCNN_Trainer import MyTrainer
 from utilis.data_loader import My_twoPhoton_Dataset, train_val_split
 from utilis.plot import plot_Training_process
@@ -56,7 +56,7 @@ if __name__ == "__main__":
     test_loader = DataLoader(test_dataset, batch_size=config['batch_size'], shuffle=False)
     
     # Create the model
-    model = MyCNN(tr_label.shape[1],
+    model = MyCNN_four_layers(tr_label.shape[1],
                   k=config['k'],
                   kernel_size=config['kernel_size'],
                   stride=config['stride'],

@@ -59,7 +59,7 @@ class MyCNN_old(nn.Module):
         return x
 
 
-class MyCNN(nn.Module):
+class MyCNN_four_layers(nn.Module):
     def __init__(self, label_length, 
                  x_shape=(3, 224, 224),
                  k=(16, 32, 64, 128), 
@@ -188,10 +188,10 @@ class MyCNN_six_layers(nn.Module):
             nn.Conv2d(k[2], k[3], kernel_size=kernel_size, stride=stride, padding=padding, bias=bias),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Conv2d(k[2], k[3], kernel_size=kernel_size, stride=stride, padding=padding, bias=bias),
+            nn.Conv2d(k[3], 256, kernel_size=kernel_size, stride=stride, padding=padding, bias=bias),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Conv2d(k[2], k[3], kernel_size=kernel_size, stride=stride, padding=padding, bias=bias),
+            nn.Conv2d(256, 512, kernel_size=kernel_size, stride=stride, padding=padding, bias=bias),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2)
         )

@@ -1,5 +1,5 @@
 from config import config
-from net.MyCNN import MyCNN, MyCNN_two_layers, MyCNN_six_layers
+from net.MyCNN import MyCNN_four_layers, MyCNN_two_layers, MyCNN_six_layers
 from net.MyCNN_Trainer import MyTrainer
 from utilis.data_loader import My_twoPhoton_Dataset, train_val_split
 from utilis.plot import plot_Training_process
@@ -91,7 +91,7 @@ def Test_MyCNN_model(model, test_loader, save_model_name='best_model.pth', devic
         correlation_cols.append(pearsonr(outputs[:, i], labels[:, i])[0])
     print("平均列相关系数：", np.mean(correlation_cols))
 
-    return correlation_rows, correlation_cols
+    return correlation_rows, correlation_cols, outputs, labels
 
 
 
@@ -111,7 +111,7 @@ if __name__ == "__main__":
     test_loader = DataLoader(test_dataset, batch_size=500, shuffle=False)
     
     # Create the model
-    for My_model in [MyCNN_two_layers, MyCNN, MyCNN_six_layers]:
+    for My_model in [MyCNN_six_layers]:
         model = My_model(tr_label.shape[1],
                         k=config['k'],
                         kernel_size=config['kernel_size'],
@@ -131,7 +131,7 @@ if __name__ == "__main__":
                             save_path=os.path.join('plots/different_layers', f'Training_process_{My_model.__name__}.png'))
         
         if config['test'] == True:
-            correlation_rows, correlation_cols = Test_MyCNN_model(model, 
+            correlation_rows, correlation_cols,_,_ = Test_MyCNN_model(model, 
                                                                 test_loader, 
                                                                 save_model_name=f'best_model_{My_model.__name__}.pth', 
                                                                 device=device)
