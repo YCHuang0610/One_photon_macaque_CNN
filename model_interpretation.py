@@ -147,7 +147,7 @@ for My_model in [MyCNN_two_layers, MyCNN_four_layers, MyCNN_six_layers]:
     plt.title('Correlation Distribution')
     plt.xlabel('Correlation')
     plt.ylabel('Frequency')
-    plt.savefig(os.paths.join('plots', My_model.__name__, 'test_correlation_distribution.png'))
+    plt.savefig(os.path.join('plots/different_layers', My_model.__name__, 'test_correlation_distribution.png'))
 
     # 2. 最高和最低的图片
     ## 2.1 相关系数最小的图片
@@ -158,7 +158,7 @@ for My_model in [MyCNN_two_layers, MyCNN_four_layers, MyCNN_six_layers]:
         plt.subplot(3, 3, i+1)
         plt.imshow(image)
         plt.title(f'correlation: {np.sort(correlation_rows)[i]}')
-    plt.savefig(os.paths.join('plots', My_model.__name__,'worst_correlation_images.png'))
+    plt.savefig(os.path.join('plots/different_layers', My_model.__name__,'worst_correlation_images.png'))
 
     ## 2.2 相关系数最大的图片
     # 把相关系数最高的前九张图片显示出来，每行显示3张图片
@@ -168,23 +168,28 @@ for My_model in [MyCNN_two_layers, MyCNN_four_layers, MyCNN_six_layers]:
         plt.subplot(3, 3, i+1)
         plt.imshow(image)
         plt.title(f'correlation: {np.sort(correlation_rows)[-i-1]}')
-    plt.savefig(os.paths.join('plots', My_model.__name__, 'best_correlation_images.png'))
+    plt.savefig(os.path.join('plots/different_layers', My_model.__name__, 'best_correlation_images.png'))
 
     # 3. 利用Grad-CAM可视化模型
-    # 选择一个图片，计算其Grad-CAM
-    # 选择相关最差的图片
-    grad_cam = GradCAM(model, model.features[-3], model.features[:9])
+    if My_model is MyCNN_two_layers:
+        grad_cam = GradCAM(model, model.features[-3], model.features[:3], last_channel=32)
+    elif My_model is MyCNN_four_layers:
+        grad_cam = GradCAM(model, model.features[-3], model.features[:9], last_channel=128)
+    elif My_model is MyCNN_six_layers:
+        grad_cam = GradCAM(model, model.features[-3], model.features[:15], last_channel=512)
+
+
     # 循环前九张相关系数最低的图片，计算其Grad-CAM
     for i in range(9):
         grad_cam.visualize_gradcam(te_image_path_list[np.argsort(correlation_rows)[i]], 
                                 labels[np.argsort(correlation_rows)[i]],
-                                save_path=os.paths.join('plots', My_model.__name__, f'worst_correlation_grad_cam_{i}.png'))
+                                save_path=os.path.join('plots/different_layers', My_model.__name__, f'worst_correlation_grad_cam_{i}.png'))
         
     # 循环前九张相关系数最高的图片，计算其Grad-CAM
     for i in range(9):
         grad_cam.visualize_gradcam(te_image_path_list[np.argsort(correlation_rows)[-i-1]], 
                                 labels[np.argsort(correlation_rows)[-i-1]],
-                                save_path=os.paths.join('plots', My_model.__name__, f'best_correlation_grad_cam_{i}.png'))
+                                save_path=os.path.join('plots/different_layers', My_model.__name__, f'best_correlation_grad_cam_{i}.png'))
 
 
 

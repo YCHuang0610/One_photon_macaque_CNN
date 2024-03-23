@@ -11,7 +11,7 @@ class MyCNN_old(nn.Module):
                  padding=0,
                  bias=True,
                  fc_hidden_units=512):
-        super(MyCNN, self).__init__()
+        super(MyCNN_old, self).__init__()
         # 卷积层
         self.conv1 = nn.Conv2d(3, k[0], 
                                kernel_size=kernel_size, 
@@ -67,7 +67,7 @@ class MyCNN_four_layers(nn.Module):
                  padding=0, 
                  bias=True, 
                  fc_hidden_units=512):
-        super(MyCNN, self).__init__()
+        super(MyCNN_four_layers, self).__init__()
 
         # 利用nn.Sequential简化卷积层定义
         self.features = nn.Sequential(
